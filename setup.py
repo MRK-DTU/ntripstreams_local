@@ -14,11 +14,11 @@ from setuptools import Command, find_packages, setup
 # Package meta-data.
 NAME = "ntripstreams"
 DESCRIPTION = "Library for Ntrip communication"
-URL = "https://github.com/MRK-DTU/ntripstreams_local"
+URL = "https://github.com/stenseng/ntripstreams"
 EMAIL = "lars@stenseng.net"
 AUTHOR = "Lars Stenseng"
 REQUIRES_PYTHON = ">=3.7.0"
-VERSION = "1.0"
+VERSION = "0.1"
 
 # What packages are required for this module to be executed?
 REQUIRED: list = [

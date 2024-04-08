@@ -14,7 +14,7 @@ from setuptools import Command, find_packages, setup
 # Package meta-data.
 NAME = "ntripstreams"
 DESCRIPTION = "Library for Ntrip communication"
-URL = "https://github.com/stenseng/ntripstreams"
+URL = "https://github.com/MRK-DTU/ntripstreams_local"
 EMAIL = "lars@stenseng.net"
 AUTHOR = "Lars Stenseng"
 REQUIRES_PYTHON = ">=3.7.0"

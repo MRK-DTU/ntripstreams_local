@@ -524,7 +524,7 @@ class NtripStream:
                 else:
                     self.rtcmFrameBuffer = BitStream()
             if self.rtcmFramePreample and self.rtcmFrameBuffer.length >= 48:
-                self.rtcmFrameBuffer.pos = 0
+                # self.rtcmFrameBuffer.pos = 0
                 (rtcmPreAmple, rtcmPayloadLength) = self.rtcmFrameBuffer.peeklist(
                     rtcm3FrameHeaderFormat
                 )

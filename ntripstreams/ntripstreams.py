@@ -475,6 +475,7 @@ class NtripStream:
         await self.ntripWriter.drain()
 
     async def getRtcmFrame(self):
+        print('Grabbing RTCM Frame!')
         rtcmFrameComplete = False
         timeStampFlag = 0
         count = 0

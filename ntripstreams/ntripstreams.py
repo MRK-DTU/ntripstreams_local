@@ -484,7 +484,7 @@ class NtripStream:
                 timeStamp = time()
                 timeStampFlag = 1
             if self.ntripStreamChunked:
-                logging.info(f"{self.ntripMountPoint}:Chunked stream. But does it loop?")
+                logging.info(f"{self.ntripMountPoint}:Chunked stream. count : {count}")
                 try:
                     rawLine = await self.ntripReader.readuntil(b"\r\n")
                     length = int(rawLine[:-2].decode("ISO-8859-1"), 16)
@@ -510,6 +510,7 @@ class NtripStream:
                 receivedBytes = BitStream(rawLine[:-2])
                 logging.debug(f"Chunk {receivedBytes.length}:{length * 8}. ")
             else:
+                logging.info(f"{self.ntripMountPoint}:Not chunked stream. count : {count}")
                 rawLine = await self.ntripReader.read(2048)
                 receivedBytes = BitStream(rawLine)
             # timeStamp = time()

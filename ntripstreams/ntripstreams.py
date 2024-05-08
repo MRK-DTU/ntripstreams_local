@@ -296,7 +296,7 @@ class NtripStream:
             line.lower() for line in self.ntripResponseHeader
         ]:
             self.ntripStreamChunked = True
-            logging.info(f"{self.ntripMountPoint}: Stream is chunked")
+            logging.info(f"{self.ntripMountPoint}: Stream is chunked. Correctly applied")
         statusResponse = self.ntripResponseHeader[0].split(" ")
         if len(statusResponse) > 1:
             self.ntripResponseStatusCode = statusResponse[1]

@@ -480,7 +480,7 @@ class NtripStream:
         timeStampFlag = 0
         # count = 0
         while not rtcmFrameComplete:
-            count += 1
+            # count += 1
             if timeStampFlag == 0:
                 timeStamp = time()
                 timeStampFlag = 1

@@ -1,3 +1,3 @@
 # .gitignore
-*.egg-info/
+ntripstreams.egg-info/
 build/

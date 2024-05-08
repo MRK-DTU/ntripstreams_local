@@ -18,9 +18,6 @@ from ntripstreams.crc import crc24q
 
 
 class NtripStream:
-    RTCM3FRAMEPREAMPLE = Bits(bin="0b11010011")
-    RTCM3FRAMEHEADERFORMAT = "bin:8, pad:6, uint:10"
-
     def __init__(self):
         self.__CLIENTVERSION = __version__
         self.__CLIENTNAME = "Bedrock Solutions NtripClient/" + f"{self.__CLIENTVERSION}"
@@ -475,16 +472,11 @@ class NtripStream:
         await self.ntripWriter.drain()
 
     async def getRtcmFrame(self):
+        rtcm3FramePreample = Bits(bin="0b11010011")
+        rtcm3FrameHeaderFormat = "bin:8, pad:6, uint:10"
         rtcmFrameComplete = False
-        timeStampFlag = 0
-        count = 0
         while not rtcmFrameComplete:
-            count += 1
-            if timeStampFlag == 0:
-                timeStamp = time()
-                timeStampFlag = 1
             if self.ntripStreamChunked:
-                logging.info(f"{self.ntripMountPoint}:Chunked stream. But does it loop?")
                 try:
                     rawLine = await self.ntripReader.readuntil(b"\r\n")
                     length = int(rawLine[:-2].decode("ISO-8859-1"), 16)
@@ -512,7 +504,7 @@ class NtripStream:
             else:
                 rawLine = await self.ntripReader.read(2048)
                 receivedBytes = BitStream(rawLine)
-            # timeStamp = time()
+            timeStamp = time()
             if self.ntripStreamChunked and receivedBytes.length != length * 8:
                 logging.error(
                     f"{self.ntripMountPoint}:Chunk incomplete "
@@ -523,7 +515,7 @@ class NtripStream:
             self.rtcmFrameBuffer += receivedBytes
             if not self.rtcmFrameAligned:
                 rtcmFramePos = self.rtcmFrameBuffer.find(
-                    NtripStream.RTCM3FRAMEPREAMPLE, bytealigned=True
+                    rtcm3FramePreample, bytealigned=True
                 )
                 if rtcmFramePos:
                     firstFrame = rtcmFramePos[0]
@@ -532,9 +524,9 @@ class NtripStream:
                 else:
                     self.rtcmFrameBuffer = BitStream()
             if self.rtcmFramePreample and self.rtcmFrameBuffer.length >= 48:
-                # self.rtcmFrameBuffer.pos = 0
+                self.rtcmFrameBuffer.pos = 0
                 (rtcmPreAmple, rtcmPayloadLength) = self.rtcmFrameBuffer.peeklist(
-                    NtripStream.RTCM3FRAMEHEADERFORMAT
+                    rtcm3FrameHeaderFormat
                 )
                 rtcmFrameLength = (rtcmPayloadLength + 6) * 8
                 if self.rtcmFrameBuffer.length >= rtcmFrameLength:

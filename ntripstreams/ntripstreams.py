@@ -475,7 +475,7 @@ class NtripStream:
         await self.ntripWriter.drain()
 
     async def getRtcmFrame(self):
-        print('Grabbing RTCM Frame!')
+        # print('Grabbing RTCM Frame!')
         rtcmFrameComplete = False
         timeStampFlag = 0
         count = 0
@@ -485,7 +485,7 @@ class NtripStream:
                 timeStamp = time()
                 timeStampFlag = 1
             if self.ntripStreamChunked:
-                print('R u here?')
+                # print('R u here?')
                 logging.info(f"{self.ntripMountPoint}:Chunked stream. count : {count}")
                 try:
                     rawLine = await self.ntripReader.readuntil(b"\r\n")
@@ -512,7 +512,7 @@ class NtripStream:
                 receivedBytes = BitStream(rawLine[:-2])
                 logging.debug(f"Chunk {receivedBytes.length}:{length * 8}. ")
             else:
-                print('u even here?')
+                # print('u even here?')
                 logging.info(f"{self.ntripMountPoint}:Not chunked stream. count : {count}")
                 rawLine = await self.ntripReader.read(2048)
                 receivedBytes = BitStream(rawLine)

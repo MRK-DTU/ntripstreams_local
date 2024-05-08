@@ -51,7 +51,7 @@ class Rtcm3:
 
     def decodeRtcmFrame(self, rtcmFrame):
         rtcmPayload = rtcmFrame[24:-24]
-        messageType, data = self.decodeRtcmMessage(rtcmPayload)
+        messageType, data = self.F(rtcmPayload)
         return messageType, data
 
     def encodeRtcmMessage(self, messageType: int, dataDict):

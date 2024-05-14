@@ -486,7 +486,7 @@ class NtripStream:
                 timeStampFlag = 1
             if self.ntripStreamChunked:
                 # print('R u here?')
-                logging.info(f"{self.ntripMountPoint}:Chunked stream. count : {count}")
+                # logging.info(f"{self.ntripMountPoint}:Chunked stream. count : {count}")
                 try:
                     rawLine = await self.ntripReader.readuntil(b"\r\n")
                     length = int(rawLine[:-2].decode("ISO-8859-1"), 16)

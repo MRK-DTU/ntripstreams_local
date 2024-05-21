@@ -475,22 +475,20 @@ class NtripStream:
         await self.ntripWriter.drain()
 
     async def getRtcmFrame(self):
-        # print('Grabbing RTCM Frame!')
         rtcmFrameComplete = False
         timeStampFlag = 0
         count = 0
         while not rtcmFrameComplete:
             count += 1
-            if timeStampFlag == 0:
-                timeStamp = time()
-                timeStampFlag = 1
             if self.ntripStreamChunked:
-                # print('R u here?')
                 # logging.info(f"{self.ntripMountPoint}:Chunked stream. count : {count}")
                 try:
                     rawLine = await self.ntripReader.readuntil(b"\r\n")
                     length = int(rawLine[:-2].decode("ISO-8859-1"), 16)
                     rawLine = await self.ntripReader.readexactly(length + 2)
+                    if timeStampFlag == 0:
+                        timeStamp = time()
+                        timeStampFlag = 1
                 except (
                     asyncio.IncompleteReadError,
                     asyncio.LimitOverrunError,
@@ -512,7 +510,6 @@ class NtripStream:
                 receivedBytes = BitStream(rawLine[:-2])
                 logging.debug(f"Chunk {receivedBytes.length}:{length * 8}. ")
             else:
-                # print('u even here?')
                 # logging.info(f"{self.ntripMountPoint}:Not chunked stream. count : {count}")
                 rawLine = await self.ntripReader.read(2048)
                 receivedBytes = BitStream(rawLine)

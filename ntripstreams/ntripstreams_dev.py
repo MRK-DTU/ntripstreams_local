@@ -23,7 +23,7 @@ class NtripStream:
 
     def __init__(self):
         self.__CLIENTVERSION = __version__
-        self.__CLIENTNAME = "NtripMonitor - Bedrock Client/" + f"{self.__CLIENTVERSION}"
+        self.__CLIENTNAME = "NtripMonitor - Bed Rock Client/" + f"{self.__CLIENTVERSION}"
         self.casterUrl = None
         self.ntripWriter = None
         self.ntripReader = None
@@ -62,6 +62,7 @@ class NtripStream:
 
         """
         self.casterUrl = urlsplit(casterUrl)
+        logging.info(f"{self.casterUrl}: Connecting to {casterUrl}.")
         try:
             if self.casterUrl.scheme == "https":
                 self.ntripReader, self.ntripWriter = await asyncio.open_connection(
@@ -444,8 +445,7 @@ class NtripStream:
         self, casterUrl: str, mountPoint: str, user: str = None, passwd: str = None
     ) -> None:
         """
-
-
+    
         Parameters
         ----------
         casterUrl : str
@@ -475,6 +475,88 @@ class NtripStream:
         await self.ntripWriter.drain()
 
     async def getRtcmFrame(self):
+        rtcmFrameComplete = False
+        timeStampFlag = 0
+        count = 0
+        while not rtcmFrameComplete:
+            count += 1
+            if self.ntripStreamChunked:
+                # logging.info(f"{self.ntripMountPoint}:Chunked stream. count : {count}")
+                try:
+                    rawLine = await self.ntripReader.readuntil(b"\r\n")
+                    length = int(rawLine[:-2].decode("ISO-8859-1"), 16)
+                    rawLine = await self.ntripReader.readexactly(length + 2)
+                    if timeStampFlag == 0:
+                        timeStamp = time()
+                        timeStampFlag = 1
+                except (
+                    asyncio.IncompleteReadError,
+                    asyncio.LimitOverrunError,
+                ) as error:
+                    raise ConnectionError(
+                        f"Connection to {self.casterUrl} failed with: {error}"
+                        "during data reception."
+                    ) from None
+                    logging.error(
+                        f"Connection to {self.casterUrl} failed with: {error}"
+                        "during data reception."
+                    )
+                if rawLine[-2:] != b"\r\n":
+                    logging.error(
+                        f"{self.ntripMountPoint}:Chunk malformed. "
+                        "Expected \r\n as ending. Closing connection!"
+                    )
+                    raise IOError("Chunk malformed ")
+                receivedBytes = BitStream(rawLine[:-2])
+                logging.debug(f"Chunk {receivedBytes.length}:{length * 8}. ")
+            else:
+                # logging.info(f"{self.ntripMountPoint}:Not chunked stream. count : {count}")
+                rawLine = await self.ntripReader.read(2048)
+                receivedBytes = BitStream(rawLine)
+            # timeStamp = time()
+            if self.ntripStreamChunked and receivedBytes.length != length * 8:
+                logging.error(
+                    f"{self.ntripMountPoint}:Chunk incomplete "
+                    f"{receivedBytes.length}:{length * 8}. "
+                    "Closing connection! "
+                )
+                raise IOError("Chunk incomplete ")
+            self.rtcmFrameBuffer += receivedBytes
+            if not self.rtcmFrameAligned:
+                rtcmFramePos = self.rtcmFrameBuffer.find(
+                    NtripStream.RTCM3FRAMEPREAMPLE, bytealigned=True
+                )
+                if rtcmFramePos:
+                    firstFrame = rtcmFramePos[0]
+                    self.rtcmFrameBuffer = self.rtcmFrameBuffer[firstFrame:]
+                    self.rtcmFramePreample = True
+                else:
+                    self.rtcmFrameBuffer = BitStream()
+            if self.rtcmFramePreample and self.rtcmFrameBuffer.length >= 48:
+                # self.rtcmFrameBuffer.pos = 0
+                (rtcmPreAmple, rtcmPayloadLength) = self.rtcmFrameBuffer.peeklist(
+                    NtripStream.RTCM3FRAMEHEADERFORMAT
+                )
+                rtcmFrameLength = (rtcmPayloadLength + 6) * 8
+                if self.rtcmFrameBuffer.length >= rtcmFrameLength:
+                    rtcmFrame = self.rtcmFrameBuffer[:rtcmFrameLength]
+                    calcCrc = crc24q(rtcmFrame[:-24])
+                    frameCrc = rtcmFrame[-24:].unpack("uint:24")
+                    if calcCrc == frameCrc[0]:
+                        self.rtcmFrameAligned = True
+                        self.rtcmFrameBuffer = self.rtcmFrameBuffer[rtcmFrameLength:]
+                        rtcmFrameComplete = True
+                    else:
+                        self.rtcmFrameAligned = False
+                        self.rtcmFrameBuffer = self.rtcmFrameBuffer[8:]
+                        logging.warning(
+                            f"{self.ntripMountPoint}:CRC mismatch "
+                            f"{hex(calcCrc)} != {rtcmFrame[-24:]}."
+                            f" Realigning!"
+                        )
+        return rtcmFrame, timeStamp
+
+    async def getRtcmChunks(self):
         rtcmFrameComplete = False
         timeStampFlag = 0
         count = 0
